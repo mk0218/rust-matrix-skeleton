@@ -1,25 +1,30 @@
 mod ops;
+// Comment above line and uncomment below to test the example.
+// mod example;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Matrix(Vec<Vec<i32>>);
 
-impl Matrix {
-    pub fn nrows(&self) -> usize {
-        self.0.len()
-    }
-
-    pub fn ncols(&self) -> usize {
-        self.0.get(0).expect(
-            "A matrix should have at least one item."
-        ).len()
-    }
-}
-
 type RawMatrix = Vec<Vec<i32>>;
 
 impl From<RawMatrix> for Matrix {
-    fn from(value: RawMatrix) -> Self {
-        Matrix(value)
+    fn from(v: RawMatrix) -> Self {
+        // vec![] and vec![vec![]] are not allowed as v.
+        if v.len() == 0 || v[0].len() == 0 {
+            panic!("Empty vector cannot be converted into a Matrix.");
+        }
+        
+        // Check if given v is a valid matrix.
+        let err = v
+            .iter()
+            .map(|r| r.len())
+            .find(|&l| l != v[0].len());
+        
+        if let Some(_) = err {
+            panic!("The length of rows are not regular.");
+        }
+
+        Matrix(v)
     }
 }
 
@@ -35,7 +40,7 @@ macro_rules! m {
         Matrix::from(vec![vec![$v; $c]; $r])
     };
 
-    [$($($v:expr),+);+] => {
+    [$($($v:expr),+);+$(;)?] => {
         Matrix::from(vec![$(vec![$($v),+]),+])
     }
 }
@@ -43,6 +48,31 @@ macro_rules! m {
 #[cfg(test)]
 mod test_matrix {
     use super::*;
+    
+    #[test]
+    #[ignore]
+    #[should_panic(expected = "Empty")]
+    fn test_empty_vector_1() {
+        let _: Matrix = Matrix::from(vec![]);
+    }
+    
+    #[test]
+    #[ignore]
+    #[should_panic(expected = "Empty")]
+    fn test_empty_vector_2() {
+        let _ = Matrix::from(vec![vec![]]);
+    }
+
+    #[test]
+    #[ignore]
+    #[should_panic(expected = "not regular")]
+    fn test_not_a_matrix() {
+        let _ = Matrix::from(vec![
+            vec![1, 2, 3],
+            vec![1, 2, 3],
+            vec![1, 2],
+        ]);
+    }
     
     #[test]
     #[ignore]
@@ -55,6 +85,6 @@ mod test_matrix {
     #[ignore]
     fn test_macro_2() {
         let expected = Matrix(vec![vec![1, 2, 3], vec![4, 5, 6]]);
-        assert_eq!(expected, m![1, 2, 3; 4, 5, 6]);
+        assert_eq!(expected, m![1, 2, 3; 4, 5, 6;]);
     }
 }
